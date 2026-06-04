@@ -1,0 +1,271 @@
+/* EMONOSHOTS — Global Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Variables ──────────────────────────────────────────── */
+:root {
+  --brand-black:    #000000;
+  --brand-deep:     #090909;
+  --brand-graphite: #111111;
+  --brand-amber:    #FF8A00;
+  --brand-white:    #FFFFFF;
+
+  --transition-brand: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-expo:  cubic-bezier(0.19, 1, 0.22, 1);
+  --transition-snap:  cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ── Base reset ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: #000;
+  color: #fff;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  cursor: none;
+  overflow-x: hidden;
+}
+
+/* ── Typography ─────────────────────────────────────────── */
+.font-display { font-family: var(--font-bebas), Impact, sans-serif; }
+.font-body    { font-family: var(--font-dm-sans), system-ui, sans-serif; }
+.font-mono    { font-family: var(--font-dm-mono), monospace; }
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #FF8A00; border-radius: 1px; }
+* { scrollbar-width: thin; scrollbar-color: #FF8A00 #000; }
+
+/* ── Selection ──────────────────────────────────────────── */
+::selection { background: rgba(255, 138, 0, 0.3); color: #FF8A00; }
+
+/* ── Focus (accessibility) ──────────────────────────────── */
+:focus-visible { outline: 1px solid rgba(255, 138, 0, 0.6); outline-offset: 2px; }
+
+/* ── Noise overlay ──────────────────────────────────────── */
+.noise {
+  position: relative;
+}
+.noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Scan line effect ───────────────────────────────────── */
+.scanlines {
+  position: relative;
+  overflow: hidden;
+}
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Vignette ───────────────────────────────────────────── */
+.vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+}
+
+/* ── Amber glow ─────────────────────────────────────────── */
+.amber-glow {
+  box-shadow: 0 0 40px rgba(255, 138, 0, 0.15), 0 0 80px rgba(255, 138, 0, 0.05);
+}
+.amber-text-glow {
+  text-shadow: 0 0 30px rgba(255, 138, 0, 0.5);
+}
+
+/* ── Utility classes ────────────────────────────────────── */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-8 py-3
+           font-body text-[10px] font-light tracking-[0.35em] uppercase
+           text-black bg-brand-amber
+           transition-all duration-300 ease-[var(--transition-brand)]
+           hover:bg-white hover:text-black;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-8 py-3
+           font-body text-[10px] font-light tracking-[0.35em] uppercase
+           text-brand-amber border border-brand-amber/40
+           transition-all duration-300 ease-[var(--transition-brand)]
+           hover:bg-brand-amber/10 hover:border-brand-amber;
+  }
+
+  .nav-link {
+    @apply font-body text-[9px] font-light tracking-[0.35em] uppercase
+           text-white/40 transition-colors duration-300
+           hover:text-brand-amber cursor-none;
+  }
+
+  .section-label {
+    @apply font-body text-[9px] font-light tracking-[0.5em] uppercase
+           text-brand-amber/70;
+  }
+
+  .heading-display {
+    @apply font-display text-[clamp(48px,8vw,128px)] leading-none tracking-wide;
+  }
+
+  .exif-readout {
+    @apply font-display text-3xl tracking-wider text-brand-amber;
+  }
+
+  .exif-label {
+    @apply font-body text-[8px] font-light tracking-[0.4em] uppercase
+           text-brand-amber/60;
+  }
+
+  .glass {
+    @apply bg-black/60 backdrop-blur-[12px] border border-white/10;
+  }
+
+  .divider {
+    @apply w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  }
+
+  .amber-divider {
+    @apply w-full h-px bg-gradient-to-r from-transparent via-brand-amber/30 to-transparent;
+  }
+
+  .photo-card {
+    @apply relative overflow-hidden bg-brand-graphite
+           transition-transform duration-700 ease-[var(--transition-expo)]
+           hover:scale-[1.02];
+  }
+
+  .bokeh-blur {
+    filter: blur(var(--bokeh-blur, 0px));
+    transition: filter 0.5s ease;
+  }
+}
+
+/* ── Canvas fullscreen ──────────────────────────────────── */
+#threejs-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Loading sequence ───────────────────────────────────── */
+.loader-text {
+  font-family: var(--font-dm-sans);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.5em;
+  color: rgba(255, 138, 0, 0.7);
+  text-transform: uppercase;
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ── Viewfinder / Camera Mode ───────────────────────────── */
+.vf-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+.vf-corner-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+.vf-corner-tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+.vf-corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
+.vf-corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+.grid-line-h, .grid-line-v {
+  position: absolute;
+  background: rgba(255, 138, 0, 0.12);
+}
+.grid-line-h { left: 0; width: 100%; height: 1px; }
+.grid-line-v { top: 0; height: 100%; width: 1px; }
+
+/* ── Before/After slider ────────────────────────────────── */
+.ba-divider {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: #FF8A00;
+  cursor: ew-resize;
+  transform: translateX(-50%);
+}
+.ba-divider::before,
+.ba-divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FF8A00;
+  top: 50%;
+  margin-top: -16px;
+}
+
+/* ── Constellation ──────────────────────────────────────── */
+.constellation-dot {
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+
+/* ── AI Typing dots ─────────────────────────────────────── */
+.typing-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #FF8A00;
+  margin: 0 2px;
+  animation: typingBounce 1.4s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%       { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ── Night Drive Mode ───────────────────────────────────── */
+.night-drive {
+  --brand-amber: #00FFFF;
+  filter: hue-rotate(180deg);
+}
+
+/* ── Dev Mode overlay ───────────────────────────────────── */
+.dev-mode * {
+  outline: 1px solid rgba(0, 255, 0, 0.1);
+}

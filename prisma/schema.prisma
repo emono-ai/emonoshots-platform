@@ -1,0 +1,316 @@
+// EMONOSHOTS - Production Database Schema
+// PostgreSQL via Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Auth ─────────────────────────────────────────────────
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── User / Client ─────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(CLIENT)
+  phone         String?
+  company       String?
+  location      String?
+  bio           String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  bookings Booking[]
+  invoices Invoice[]
+  galleries Gallery[]
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+  PHOTOGRAPHER
+}
+
+// ── Photography ───────────────────────────────────────────
+model Photo {
+  id          String   @id @default(cuid())
+  sanityId    String?  @unique // Synced from Sanity CMS
+  title       String
+  slug        String   @unique
+  category    Category
+  description String?  @db.Text
+  story       String?  @db.Text
+  
+  // Technical EXIF data
+  camera      String?
+  lens        String?
+  focalLength String?
+  aperture    String?
+  shutterSpeed String?
+  iso         Int?
+  shootingMode String?
+  
+  // Location
+  locationName String?
+  latitude     Float?
+  longitude    Float?
+  
+  // Images (Sanity-managed)
+  imageUrl     String
+  thumbnailUrl String?
+  rawUrl       String?
+  
+  // Metadata
+  takenAt      DateTime?
+  featured     Boolean  @default(false)
+  published    Boolean  @default(false)
+  views        Int      @default(0)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  galleryItems GalleryItem[]
+  tags         PhotoTag[]
+}
+
+model Tag {
+  id     String     @id @default(cuid())
+  name   String     @unique
+  slug   String     @unique
+  color  String?
+  photos PhotoTag[]
+}
+
+model PhotoTag {
+  photoId String
+  tagId   String
+  photo   Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([photoId, tagId])
+}
+
+enum Category {
+  AUTOMOTIVE
+  DRIFT
+  MOTORSPORTS
+  ARCHITECTURE
+  STREET
+  MACRO
+  PORTRAIT
+  CINEMATIC
+}
+
+// ── Gallery (Client Portal) ────────────────────────────────
+model Gallery {
+  id          String      @id @default(cuid())
+  title       String
+  description String?     @db.Text
+  clientId    String
+  bookingId   String?     @unique
+  status      GalleryStatus @default(DRAFT)
+  password    String?
+  expiresAt   DateTime?
+  downloadCount Int       @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  client  User          @relation(fields: [clientId], references: [id])
+  booking Booking?      @relation(fields: [bookingId], references: [id])
+  items   GalleryItem[]
+}
+
+model GalleryItem {
+  id          String   @id @default(cuid())
+  galleryId   String
+  photoId     String
+  approved    Boolean? // null=pending, true=approved, false=rejected
+  editRequest String?  @db.Text
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  gallery Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  photo   Photo   @relation(fields: [photoId], references: [id])
+}
+
+enum GalleryStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  DELIVERED
+}
+
+// ── Bookings ──────────────────────────────────────────────
+model Booking {
+  id           String        @id @default(cuid())
+  clientId     String
+  type         ShootType
+  title        String
+  description  String?       @db.Text
+  status       BookingStatus @default(INQUIRY)
+  
+  // Schedule
+  proposedDate DateTime?
+  confirmedDate DateTime?
+  duration     Int?          // minutes
+  
+  // Location
+  locationName String?
+  locationUrl  String?
+  latitude     Float?
+  longitude    Float?
+  
+  // Financials
+  estimatedPrice Float?
+  finalPrice     Float?
+  currency       String @default("MAD")
+  
+  // AI-generated moodboard JSON
+  moodboard    Json?
+  
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  client  User     @relation(fields: [clientId], references: [id])
+  invoice Invoice?
+  gallery Gallery?
+}
+
+enum ShootType {
+  AUTOMOTIVE
+  DRIFT
+  MOTORSPORTS
+  ARCHITECTURE
+  STREET
+  MACRO
+  PORTRAIT
+  COMMERCIAL
+  EVENT
+}
+
+enum BookingStatus {
+  INQUIRY
+  PROPOSAL_SENT
+  CONFIRMED
+  DEPOSIT_PAID
+  IN_PROGRESS
+  EDITING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+// ── Invoices ──────────────────────────────────────────────
+model Invoice {
+  id          String        @id @default(cuid())
+  bookingId   String        @unique
+  clientId    String
+  number      String        @unique
+  status      InvoiceStatus @default(DRAFT)
+  
+  subtotal    Float
+  tax         Float         @default(0)
+  total       Float
+  currency    String        @default("MAD")
+  
+  dueDate     DateTime?
+  paidAt      DateTime?
+  stripePaymentIntentId String?
+  
+  lineItems   Json          // { description, quantity, unitPrice, total }[]
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+  client      User          @relation(fields: [clientId], references: [id])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// ── AI Concierge Conversations ─────────────────────────────
+model ConciergeLead {
+  id           String   @id @default(cuid())
+  sessionId    String   @unique
+  email        String?
+  phone        String?
+  conversation Json     // { role, content, timestamp }[]
+  moodboard    Json?
+  convertedAt  DateTime?
+  bookingId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ── Analytics ─────────────────────────────────────────────
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  photoSlug String?
+  sessionId String?
+  country   String?
+  city      String?
+  createdAt DateTime @default(now())
+
+  @@index([path, createdAt])
+  @@index([photoSlug])
+}
+
+model PhotoView {
+  id        String   @id @default(cuid())
+  photoSlug String
+  sessionId String?
+  duration  Int?     // seconds on page
+  createdAt DateTime @default(now())
+
+  @@index([photoSlug, createdAt])
+}
